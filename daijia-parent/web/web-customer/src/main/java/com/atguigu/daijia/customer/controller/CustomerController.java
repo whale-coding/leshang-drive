@@ -1,9 +1,8 @@
 package com.atguigu.daijia.customer.controller;
 
-import com.atguigu.daijia.common.constant.RedisConstant;
-import com.atguigu.daijia.common.execption.GuiguException;
+import com.atguigu.daijia.common.login.GuiguLogin;
 import com.atguigu.daijia.common.result.Result;
-import com.atguigu.daijia.common.result.ResultCodeEnum;
+import com.atguigu.daijia.common.util.AuthContextHolder;
 import com.atguigu.daijia.customer.service.CustomerService;
 import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,8 +31,13 @@ public class CustomerController {
     }
 
     @Operation(summary = "获取客户登录信息")
+    @GuiguLogin
     @GetMapping("/getCustomerLoginInfo")
     public Result<CustomerLoginVo> getCustomerLoginInfo(@RequestHeader(value="token") String token) {
+        // 从ThreadLocal中获取登录用户的id
+        Long customerId = AuthContextHolder.getUserId();
+
+        /**
         // 根据请求头token从redis中获取用户id
         String loginKey = RedisConstant.USER_LOGIN_KEY_PREFIX + token;
         Object customerIdObj = redisTemplate.opsForValue().get(loginKey);
@@ -53,6 +57,8 @@ public class CustomerController {
             log.error("Redis中用户登录ID格式非法，key:{}, value:{}", loginKey, customerIdStr, e);
             throw new GuiguException(ResultCodeEnum.TOKEN_INVALID);
         }
+         */
+
         log.info("获取登录用户信息成功，customerId:{}", customerId);
 
         // 调用service查询登录用户信息
