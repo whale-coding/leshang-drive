@@ -6,6 +6,7 @@ import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
 import com.atguigu.daijia.customer.client.CustomerInfoFeignClient;
 import com.atguigu.daijia.customer.service.CustomerService;
+import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -56,5 +57,26 @@ public class CustomerServiceImpl implements CustomerService {
 
         // 6.返回token
         return token;
+    }
+
+    /**
+     * 获取客户登录信息
+     * @param customerId 客户id
+     * @return CustomerLoginVo
+     */
+    @Override
+    public CustomerLoginVo getCustomerLoginInfo(long customerId) {
+        // 远程调用，获取用户登录结果
+        Result<CustomerLoginVo> result = customerInfoFeignClient.getCustomerLoginInfo(customerId);
+        if(result.getCode() != 200) {
+            throw new GuiguException(result.getCode(), result.getMessage());
+        }
+
+        CustomerLoginVo customerLoginVo = result.getData();
+        if(null == customerLoginVo) {
+            throw new GuiguException(ResultCodeEnum.DATA_ERROR);
+        }
+
+        return customerLoginVo;
     }
 }
