@@ -2,6 +2,8 @@ package com.atguigu.daijia.customer.service.impl;
 
 import cn.binarywang.wx.miniapp.api.WxMaService;
 import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
+import cn.binarywang.wx.miniapp.bean.WxMaPhoneNumberInfo;
+import com.alibaba.fastjson2.JSON;
 import com.atguigu.daijia.common.execption.GuiguException;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
 import com.atguigu.daijia.customer.constant.CustomerConstant;
@@ -10,10 +12,12 @@ import com.atguigu.daijia.customer.mapper.CustomerLoginLogMapper;
 import com.atguigu.daijia.customer.service.CustomerInfoService;
 import com.atguigu.daijia.model.entity.customer.CustomerInfo;
 import com.atguigu.daijia.model.entity.customer.CustomerLoginLog;
+import com.atguigu.daijia.model.form.customer.UpdateWxPhoneForm;
 import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.Resource;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -106,5 +110,29 @@ public class CustomerInfoServiceImpl extends ServiceImpl<CustomerInfoMapper, Cus
 
         // 返回CustomerLoginVo
         return customerLoginVo;
+    }
+
+    /**
+     * 更新客户微信手机号码
+     * @param updateWxPhoneForm 更新微信手机号表单
+     * @return 是否更新成功
+     */
+    @SneakyThrows
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public Boolean updateWxPhoneNumber(UpdateWxPhoneForm updateWxPhoneForm) {
+        // 调用微信 API 获取用户的手机号
+        WxMaPhoneNumberInfo phoneInfo = wxMaService.getUserService().getPhoneNoInfo(updateWxPhoneForm.getCode());
+        String phoneNumber = phoneInfo.getPhoneNumber();
+        log.info("phoneInfo:{}", JSON.toJSONString(phoneInfo));
+
+        // 组装更新对象
+        CustomerInfo customerInfo = new CustomerInfo();
+        customerInfo.setId(updateWxPhoneForm.getCustomerId());
+        customerInfo.setPhone(phoneNumber);
+        // 执行更新，返回受影响行数 int
+        int result = customerInfoMapper.updateById(customerInfo);
+        // int 转 Boolean：更新行数大于0代表成功
+        return result > 0;
     }
 }

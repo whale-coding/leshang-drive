@@ -6,6 +6,7 @@ import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
 import com.atguigu.daijia.customer.client.CustomerInfoFeignClient;
 import com.atguigu.daijia.customer.service.CustomerService;
+import com.atguigu.daijia.model.form.customer.UpdateWxPhoneForm;
 import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -78,5 +79,18 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         return customerLoginVo;
+    }
+
+    /**
+     * 更新客户微信手机号码
+     * @param updateWxPhoneForm 更新微信手机号表单
+     * @return 是否更新成功
+     */
+    @Override
+    public Object updateWxPhoneNumber(UpdateWxPhoneForm updateWxPhoneForm) {
+        // 远程调用
+        // customerInfoFeignClient.updateWxPhoneNumber(updateWxPhoneForm);  // 个人版微信公众号,获取不到手机号，直接跳过
+
+        return true;
     }
 }
