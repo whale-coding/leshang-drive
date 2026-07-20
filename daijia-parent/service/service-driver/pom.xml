@@ -12,7 +12,11 @@
     <packaging>jar</packaging>
 
     <dependencies>
-
+        <!-- 微信开发 Java SDK -->
+        <dependency>
+            <groupId>com.github.binarywang</groupId>
+            <artifactId>weixin-java-miniapp</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
