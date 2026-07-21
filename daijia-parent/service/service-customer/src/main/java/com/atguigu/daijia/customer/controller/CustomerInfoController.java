@@ -2,7 +2,6 @@ package com.atguigu.daijia.customer.controller;
 
 import com.atguigu.daijia.common.result.Result;
 import com.atguigu.daijia.customer.service.CustomerInfoService;
-import com.atguigu.daijia.model.entity.customer.CustomerInfo;
 import com.atguigu.daijia.model.form.customer.UpdateWxPhoneForm;
 import com.atguigu.daijia.model.vo.customer.CustomerLoginVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,10 +36,5 @@ public class CustomerInfoController {
 		return Result.ok(customerInfoService.updateWxPhoneNumber(updateWxPhoneForm));
 	}
 
-	@Operation(summary = "获取客户基本信息")
-	@GetMapping("/getCustomerInfo/{customerId}")
-	public Result<CustomerInfo> getCustomerInfo(@PathVariable Long customerId) {
-		return Result.ok(customerInfoService.getById(customerId));
-	}
 }
 
