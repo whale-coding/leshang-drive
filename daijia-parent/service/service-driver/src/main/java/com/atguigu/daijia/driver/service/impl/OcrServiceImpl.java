@@ -4,14 +4,14 @@ import com.atguigu.daijia.driver.config.TencentCloudProperties;
 import com.atguigu.daijia.driver.service.CosService;
 import com.atguigu.daijia.driver.service.OcrService;
 import com.atguigu.daijia.model.vo.driver.CosUploadVo;
+import com.atguigu.daijia.model.vo.driver.DriverLicenseOcrVo;
 import com.atguigu.daijia.model.vo.driver.IdCardOcrVo;
 import com.tencentcloudapi.common.Credential;
 import com.tencentcloudapi.common.exception.TencentCloudSDKException;
 import com.tencentcloudapi.common.profile.ClientProfile;
 import com.tencentcloudapi.common.profile.HttpProfile;
 import com.tencentcloudapi.ocr.v20181119.OcrClient;
-import com.tencentcloudapi.ocr.v20181119.models.IDCardOCRRequest;
-import com.tencentcloudapi.ocr.v20181119.models.IDCardOCRResponse;
+import com.tencentcloudapi.ocr.v20181119.models.*;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -85,6 +85,82 @@ public class OcrServiceImpl implements OcrService {
 
         // 返回vo
         return idCardOcrVo;
+    }
+
+    /**
+     * 驾驶证OCR识别
+     * 调用腾讯云OCR接口识别驾驶证正反面信息，并将图片上传至腾讯云COS存储
+     * @param file 驾驶证照片文件
+     * @return DriverLicenseOcrVo 识别结果封装VO
+     * 文档地址：https://cloud.tencent.com/document/product/866/36213
+     */
+    @Override
+    @SneakyThrows
+    public DriverLicenseOcrVo driverLicenseOcr(MultipartFile file) {
+        // 将图片字节数组进行Base64编码，用于腾讯云OCR接口传参
+        byte[] encoder = Base64.encodeBase64(file.getBytes());
+        String driverLicenseBase64 = new String(encoder);
+
+        // 构建腾讯云凭证对象，使用配置文件中的SecretId、SecretKey
+        Credential cred = new Credential(tencentCloudProperties.getSecretId(), tencentCloudProperties.getSecretKey());
+
+        // 调用腾讯云身份证识别接口，获取识别响应结果
+        DriverLicenseOCRResponse resp = getDriverLicenseOCRResponse(cred, driverLicenseBase64);
+
+        // 打印OCR原始响应JSON日志，便于排查识别异常
+        log.info(VehicleLicenseOCRResponse.toJsonString(resp));
+
+        // 初始化返回结果VO
+        DriverLicenseOcrVo driverLicenseOcrVo = new DriverLicenseOcrVo();
+
+        // 判断驾驶证正反面：存在姓名字段代表驾驶证正面
+        if (StringUtils.hasText(resp.getName())){
+            // 驾驶证正面信息填充
+            driverLicenseOcrVo.setName(resp.getName());  // 持证人姓名，业务上建议与身份证姓名做一致性校验
+            driverLicenseOcrVo.setDriverLicenseClazz(resp.getClass_());  // 准驾车型
+            driverLicenseOcrVo.setDriverLicenseNo(resp.getCardCode());  // 驾驶证号码
+            driverLicenseOcrVo.setDriverLicenseIssueDate(DateTimeFormat.forPattern("yyyy-MM-dd").parseDateTime(resp.getDateOfFirstIssue()).toDate());  // 初次领证日期
+            driverLicenseOcrVo.setDriverLicenseExpire(DateTimeFormat.forPattern("yyyy-MM-dd").parseDateTime(resp.getEndDate()).toDate());  // 证件有效截止日期
+
+            // 将驾驶证正面原图上传至COS，保存资源地址
+            CosUploadVo cosUploadVo = cosService.upload(file, "driverLicense");
+            driverLicenseOcrVo.setDriverLicenseFrontUrl(cosUploadVo.getUrl());
+            driverLicenseOcrVo.setDriverLicenseFrontShowUrl(cosUploadVo.getShowUrl());
+        }else {
+            // 驾驶证反面信息填充
+            // 将驾驶证反面原图上传至COS，保存资源地址
+            CosUploadVo cosUploadVo =  cosService.upload(file, "driverLicense");
+            driverLicenseOcrVo.setDriverLicenseBackUrl(cosUploadVo.getUrl());
+            driverLicenseOcrVo.setDriverLicenseBackShowUrl(cosUploadVo.getShowUrl());
+        }
+
+        // 返回vo
+        return driverLicenseOcrVo;
+    }
+
+    /**
+     * 发起腾讯云驾驶证OCR识别请求
+     * @param cred 腾讯云调用凭证
+     * @param driverLicenseBase64 驾驶证图片Base64编码字符串
+     * @return DriverLicenseOCRResponse 腾讯云OCR原始响应对象
+     * @throws TencentCloudSDKException 腾讯云SDK调用异常
+     */
+    private DriverLicenseOCRResponse getDriverLicenseOCRResponse(Credential cred, String driverLicenseBase64) throws TencentCloudSDKException {
+        // 配置HTTP请求参数(可选)
+        HttpProfile httpProfile = new HttpProfile();
+        httpProfile.setEndpoint("ocr.tencentcloudapi.com");  // 接口请求域名
+        ClientProfile clientProfile = new ClientProfile();
+        clientProfile.setHttpProfile(httpProfile);
+
+        // 初始化OCR客户端
+        OcrClient client = new OcrClient(cred, tencentCloudProperties.getRegion(), clientProfile);
+
+        // 组装识别请求参数，传入图片base64
+        DriverLicenseOCRRequest req = new DriverLicenseOCRRequest();
+        req.setImageBase64(driverLicenseBase64);
+
+        // 执行接口调用，返回原始识别结果
+        return client.DriverLicenseOCR(req);
     }
 
     /**
