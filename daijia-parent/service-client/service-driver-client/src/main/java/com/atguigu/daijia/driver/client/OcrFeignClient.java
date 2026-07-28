@@ -1,7 +1,6 @@
 package com.atguigu.daijia.driver.client;
 
 import com.atguigu.daijia.common.result.Result;
-import com.atguigu.daijia.model.vo.driver.DriverLicenseOcrVo;
 import com.atguigu.daijia.model.vo.driver.IdCardOcrVo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
@@ -12,5 +11,11 @@ import org.springframework.web.multipart.MultipartFile;
 @FeignClient(value = "service-driver")
 public interface OcrFeignClient {
 
-
+    /**
+     * 身份证OCR识别
+     * @param file 身份证照片文件
+     * @return IdCardOcrVo
+     */
+    @PostMapping(value = "/ocr/idCardOcr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    Result<IdCardOcrVo> idCardOcr(@RequestPart("file") MultipartFile file);
 }

@@ -1,5 +1,9 @@
 package com.atguigu.daijia.driver.service;
 
-public interface OcrService {
+import com.atguigu.daijia.model.vo.driver.IdCardOcrVo;
+import org.springframework.web.multipart.MultipartFile;
 
+public interface OcrService {
+    // 身份证OCR识别
+    IdCardOcrVo idCardOcr(MultipartFile file);
 }
