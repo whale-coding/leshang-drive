@@ -5,6 +5,7 @@ import cn.binarywang.wx.miniapp.bean.WxMaJscode2SessionResult;
 import com.atguigu.daijia.common.constant.SystemConstant;
 import com.atguigu.daijia.common.execption.GuiguException;
 import com.atguigu.daijia.common.result.ResultCodeEnum;
+import com.atguigu.daijia.driver.config.TencentCloudProperties;
 import com.atguigu.daijia.driver.constant.DriverConstant;
 import com.atguigu.daijia.driver.mapper.DriverAccountMapper;
 import com.atguigu.daijia.driver.mapper.DriverInfoMapper;
@@ -16,12 +17,20 @@ import com.atguigu.daijia.model.entity.driver.DriverAccount;
 import com.atguigu.daijia.model.entity.driver.DriverInfo;
 import com.atguigu.daijia.model.entity.driver.DriverLoginLog;
 import com.atguigu.daijia.model.entity.driver.DriverSet;
+import com.atguigu.daijia.model.form.driver.DriverFaceModelForm;
 import com.atguigu.daijia.model.form.driver.UpdateDriverAuthInfoForm;
 import com.atguigu.daijia.model.vo.driver.DriverAuthInfoVo;
 import com.atguigu.daijia.model.vo.driver.DriverLoginVo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.tencentcloudapi.common.Credential;
+import com.tencentcloudapi.common.profile.ClientProfile;
+import com.tencentcloudapi.common.profile.HttpProfile;
+import com.tencentcloudapi.iai.v20200303.IaiClient;
+import com.tencentcloudapi.iai.v20200303.models.CreatePersonRequest;
+import com.tencentcloudapi.iai.v20200303.models.CreatePersonResponse;
 import jakarta.annotation.Resource;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -52,6 +61,9 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
 
     @Resource
     private CosService cosService;
+
+    @Resource
+    private TencentCloudProperties tencentCloudProperties;
 
     /**
      * 司机端登录
@@ -175,5 +187,66 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         BeanUtils.copyProperties(updateDriverAuthInfoForm, driverInfo);
 
         return this.updateById(driverInfo);
+    }
+
+    /**
+     * 创建司机人脸模型
+     * @param driverFaceModelForm 司机人脸模型表单，包括司机id和人脸图
+     * @return 是否创建成功
+     * 文档地址：https://cloud.tencent.com/document/api/867/45014
+     */
+    @Override
+    @SneakyThrows
+    public Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm) {
+        // 查询司机信息
+        DriverInfo driverInfo = driverInfoMapper.selectById(driverFaceModelForm.getDriverId());
+
+        // 构建腾讯云凭证对象，使用配置文件中的SecretId、SecretKey
+        Credential cred = new Credential(tencentCloudProperties.getSecretId(), tencentCloudProperties.getSecretKey());
+
+        // 创建腾讯云人脸识别客户端
+        IaiClient client = getIaiClient(cred);
+
+        // 实例化一个请求对象，每个接口都会对应一个request对象
+        CreatePersonRequest req = new CreatePersonRequest();
+        req.setGroupId(tencentCloudProperties.getPersonGroupId());
+        // 设置基本信息
+        req.setPersonId(String.valueOf(driverInfo.getId()));
+        req.setGender(Long.parseLong(driverInfo.getGender()));
+        req.setQualityControl(4L);
+        req.setUniquePersonControl(4L);
+        req.setPersonName(driverInfo.getName());
+        req.setImage(driverFaceModelForm.getImageBase64());
+
+        // 执行接口调用，返回原始创建结果，返回的resp是一个CreatePersonResponse的实例，与请求对象对应
+        CreatePersonResponse resp = client.CreatePerson(req);
+
+        // 原始响应JSON日志，便于排查识别异常
+        log.info(CreatePersonResponse.toJsonString(resp));
+
+        // 如果接口调用返回有内容，则保存人脸模型ID
+        if (StringUtils.hasText(resp.getFaceId())){
+            // 人脸校验必要参数，保存到数据库表
+            driverInfo.setFaceModelId(resp.getFaceId());
+            driverInfoMapper.updateById(driverInfo);
+        }
+
+        return true;
+    }
+
+    /**
+     * 创建腾讯云人脸识别客户端对象
+     * @param cred 腾讯云调用凭证
+     * @return IaiClient 人脸识别客户端对象
+     */
+    private IaiClient getIaiClient(Credential cred) {
+        // 配置HTTP请求参数(可选)
+        HttpProfile httpProfile = new HttpProfile();
+        httpProfile.setEndpoint("iai.tencentcloudapi.com");
+        ClientProfile clientProfile = new ClientProfile();
+        clientProfile.setHttpProfile(httpProfile);
+
+        // 实例化要请求产品(人脸识别)的client对象,clientProfile是可选的
+        return new IaiClient(cred, tencentCloudProperties.getRegion(), clientProfile);
     }
 }

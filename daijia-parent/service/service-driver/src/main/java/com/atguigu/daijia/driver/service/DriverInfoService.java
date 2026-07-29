@@ -1,6 +1,7 @@
 package com.atguigu.daijia.driver.service;
 
 import com.atguigu.daijia.model.entity.driver.DriverInfo;
+import com.atguigu.daijia.model.form.driver.DriverFaceModelForm;
 import com.atguigu.daijia.model.form.driver.UpdateDriverAuthInfoForm;
 import com.atguigu.daijia.model.vo.driver.DriverAuthInfoVo;
 import com.atguigu.daijia.model.vo.driver.DriverLoginVo;
@@ -18,4 +19,7 @@ public interface DriverInfoService extends IService<DriverInfo> {
 
     // 更新司机认证信息
     Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm);
+
+    // 创建司机人脸模型
+    Boolean creatDriverFaceModel(DriverFaceModelForm driverFaceModelForm);
 }

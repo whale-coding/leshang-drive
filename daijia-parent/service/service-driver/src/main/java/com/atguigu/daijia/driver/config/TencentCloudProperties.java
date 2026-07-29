@@ -16,4 +16,6 @@ public class TencentCloudProperties {
     private String secretKey;
     private String region;
     private String bucketPrivate;
+
+    private String personGroupId;  // 要与腾讯云人脸识别中的“人员库ID”保持一致
 }
