@@ -3,6 +3,8 @@ package com.atguigu.daijia.driver.service.impl;
 import com.atguigu.daijia.common.constant.RedisConstant;
 import com.atguigu.daijia.driver.client.DriverInfoFeignClient;
 import com.atguigu.daijia.driver.service.DriverService;
+import com.atguigu.daijia.model.form.driver.UpdateDriverAuthInfoForm;
+import com.atguigu.daijia.model.vo.driver.DriverAuthInfoVo;
 import com.atguigu.daijia.model.vo.driver.DriverLoginVo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -53,5 +55,27 @@ public class DriverServiceImpl implements DriverService {
     public DriverLoginVo getDriverLoginInfo(Long driverId) {
         // 远程调用，获取司机登录信息
         return driverInfoFeignClient.getDriverLoginInfo(driverId).getData();
+    }
+
+    /**
+     * 获取司机认证信息
+     * @param driverId 司机id
+     * @return DriverAuthInfoVo
+     */
+    @Override
+    public DriverAuthInfoVo getDriverAuthInfo(Long driverId) {
+        // 远程调用
+        return driverInfoFeignClient.getDriverAuthInfo(driverId).getData();
+    }
+
+    /**
+     * 更新司机认证信息
+     * @param updateDriverAuthInfoForm 更新认证信息表单
+     * @return 是否更新成功
+     */
+    @Override
+    public Boolean updateDriverAuthInfo(UpdateDriverAuthInfoForm updateDriverAuthInfoForm) {
+        // 远程调用
+        return driverInfoFeignClient.UpdateDriverAuthInfo(updateDriverAuthInfoForm).getData();
     }
 }
