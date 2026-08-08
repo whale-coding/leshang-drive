@@ -17,6 +17,7 @@ public class ServiceMapApplication {
         SpringApplication.run(ServiceMapApplication.class, args);
     }
 
+    // 将RestTemplate交给Spring去管理（可以创建配置文件去配置，也可以在启动类直接配置）
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
