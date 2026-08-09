@@ -1,0 +1,8 @@
+package  com.atguigu.daijia
+
+rule "rule_1"
+    when
+       eval(true)
+    then
+        System.out.println("打印成功");
+end

@@ -53,9 +53,14 @@ public class MapServiceImpl implements MapService {
 
         // 3.使用restTemplate调用腾讯地图服务（GET请求）
         JSONObject result = restTemplate.getForObject(url, JSONObject.class, map);
+        // 打印日志
+        log.info("腾讯地图驾车路线接口返回完整数据：{}", result.toJSONString());
         // 4.处理返回结果
         // 判断调用是否成功
         if(result.getIntValue("status") != 0) {
+            log.error("腾讯地图调用失败，status={}，message={}",
+                    result.getIntValue("status"),
+                    result.getString("message"));
             throw new GuiguException(ResultCodeEnum.MAP_FAIL);
         }
         // 获取返回的路线方案（选取第一条路线，一般为最佳路线）

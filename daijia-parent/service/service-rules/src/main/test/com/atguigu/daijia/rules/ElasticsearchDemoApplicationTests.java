@@ -21,6 +21,17 @@ class ElasticsearchDemoApplicationTests {
     @Autowired
     private KieContainer kieContainer;
 
+
+    @Test
+    void test0() {
+        // 开启会话
+        KieSession kieSession = kieContainer.newKieSession();
+        // 触发规则
+        kieSession.fireAllRules();
+        // 中止会话
+        kieSession.dispose();
+    }
+
     @Test
     void test1() {
         FeeRuleRequest feeRuleRequest = new FeeRuleRequest();
@@ -46,7 +57,7 @@ class ElasticsearchDemoApplicationTests {
     void test2() {
         RewardRuleRequest rewardRuleRequest = new RewardRuleRequest();
         rewardRuleRequest.setStartTime("01:59:59");
-        rewardRuleRequest.setOrderNum(10);
+        rewardRuleRequest.setOrderNum(10L);
 
         // 开启会话
         KieSession kieSession = kieContainer.newKieSession();
@@ -66,7 +77,7 @@ class ElasticsearchDemoApplicationTests {
     void test3() {
         ProfitsharingRuleRequest profitsharingRuleRequest = new ProfitsharingRuleRequest();
         profitsharingRuleRequest.setOrderAmount(new BigDecimal(34));
-        profitsharingRuleRequest.setOrderNum(0);
+        profitsharingRuleRequest.setOrderNum(0L);
 
 
         BigDecimal d = profitsharingRuleRequest.getOrderAmount().multiply(new BigDecimal("0.006"));
