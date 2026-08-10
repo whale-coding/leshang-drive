@@ -2,8 +2,10 @@ package com.atguigu.daijia.customer.controller;
 
 import com.atguigu.daijia.common.login.GuiguLogin;
 import com.atguigu.daijia.common.result.Result;
+import com.atguigu.daijia.common.util.AuthContextHolder;
 import com.atguigu.daijia.customer.service.OrderService;
 import com.atguigu.daijia.model.form.customer.ExpectOrderForm;
+import com.atguigu.daijia.model.form.customer.SubmitOrderForm;
 import com.atguigu.daijia.model.vo.customer.ExpectOrderVo;
 import com.atguigu.daijia.model.vo.order.CurrentOrderInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +39,22 @@ public class OrderController {
     @PostMapping("/expectOrder")
     public Result<ExpectOrderVo> expectOrder(@RequestBody ExpectOrderForm expectOrderForm) {
         return Result.ok(orderService.expectOrder(expectOrderForm));
+    }
+
+    @Operation(summary = "乘客下单")
+    @GuiguLogin
+    @PostMapping("/submitOrder")
+    public Result<Long> submitOrder(@RequestBody SubmitOrderForm submitOrderForm) {
+        // 获取当前登录用户的id
+        submitOrderForm.setCustomerId(AuthContextHolder.getUserId());
+        return Result.ok(orderService.submitOrder(submitOrderForm));
+    }
+
+    @Operation(summary = "查询订单状态")
+    @GuiguLogin
+    @GetMapping("/getOrderStatus/{orderId}")
+    public Result<Integer> getOrderStatus(@PathVariable Long orderId) {
+        return Result.ok(orderService.getOrderStatus(orderId));
     }
 }
 
