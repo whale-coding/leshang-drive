@@ -249,4 +249,17 @@ public class DriverInfoServiceImpl extends ServiceImpl<DriverInfoMapper, DriverI
         // 实例化要请求产品(人脸识别)的client对象,clientProfile是可选的
         return new IaiClient(cred, tencentCloudProperties.getRegion(), clientProfile);
     }
+
+    /**
+     * 获取司机设置信息
+     * @param driverId 司机Id
+     * @return DriverSet 司机设置信息
+     */
+    @Override
+    public DriverSet getDriverSet(Long driverId) {
+        LambdaQueryWrapper<DriverSet> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(DriverSet::getDriverId, driverId);
+
+        return driverSetMapper.selectOne(queryWrapper);
+    }
 }
