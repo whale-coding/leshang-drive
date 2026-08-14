@@ -1,5 +1,6 @@
 package com.xxl.job.admin.controller;
 
+import com.xxl.job.admin.controller.annotation.PermissionLimit;
 import com.xxl.job.admin.core.cron.CronExpression;
 import com.xxl.job.admin.core.exception.XxlJobException;
 import com.xxl.job.admin.core.model.XxlJobGroup;
@@ -23,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -176,5 +178,75 @@ public class JobInfoController {
 		return new ReturnT<List<String>>(result);
 
 	}
+
+
+
+	/*------------------自定义方法----------------------  */
+	/**
+	 * 添加任务
+	 */
+	@RequestMapping("/addJob")
+	@ResponseBody
+	@PermissionLimit(limit = false)  // 排除登录校验
+	public ReturnT<String> addJobInfo(@RequestBody XxlJobInfo jobInfo) {
+		return xxlJobService.add(jobInfo);
+	}
+
+	/**
+	 * 更新任务
+	 */
+	@RequestMapping("/updateJob")
+	@ResponseBody
+	@PermissionLimit(limit = false)  // 排除登录校验
+	public ReturnT<String> updateJob(@RequestBody XxlJobInfo jobInfo) {
+		return xxlJobService.update(jobInfo);
+	}
+
+	/**
+	 * 移除任务
+	 */
+	@RequestMapping("/removeJob")
+	@ResponseBody
+	@PermissionLimit(limit = false)  // 排除登录校验
+	public ReturnT<String> removeJob(@RequestBody XxlJobInfo jobInfo) {
+		return xxlJobService.remove(jobInfo.getId());
+	}
+
+	/**
+	 * 停止任务
+	 */
+	@RequestMapping("/stopJob")
+	@ResponseBody
+	@PermissionLimit(limit = false)  // 排除登录校验
+	public ReturnT<String> pauseJob(@RequestBody XxlJobInfo jobInfo) {
+		return xxlJobService.stop(jobInfo.getId());
+	}
+
+	/**
+	 * 启动任务
+	 */
+	@RequestMapping("/startJob")
+	@ResponseBody
+	@PermissionLimit(limit = false)  // 排除登录校验
+	public ReturnT<String> startJob(@RequestBody XxlJobInfo jobInfo) {
+		return xxlJobService.start(jobInfo.getId());
+	}
+
+	/**
+	 * 添加并启动任务
+	 */
+	@RequestMapping("/addAndStartJob")
+	@ResponseBody
+	@PermissionLimit(limit = false)  // 排除登录校验
+	public ReturnT<String> addAndStartJob(@RequestBody XxlJobInfo jobInfo) {
+		ReturnT<String> result = xxlJobService.add(jobInfo);
+		int id = Integer.parseInt(result.getContent());
+		xxlJobService.start(id);
+
+		// 立即执行一次
+		JobTriggerPoolHelper.trigger(id, TriggerTypeEnum.MANUAL, -1, null, jobInfo.getExecutorParam(), "");
+		return result;
+	}
+	/*------------------自定义方法----------------------  */
 	
 }

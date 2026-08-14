@@ -49,6 +49,8 @@ public enum ResultCodeEnum {
     WX_CODE_ERROR(20001, "微信登录凭证code无效或已过期，请重新授权登录"),
 
     TOKEN_INVALID(20002, "登录已失效，请重新登录"),
+
+    XXL_JOB_ERROR(20003,"XXL-JOb执行任务失败")
     ;
 
     private Integer code;
