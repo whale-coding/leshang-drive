@@ -50,8 +50,9 @@ public enum ResultCodeEnum {
 
     TOKEN_INVALID(20002, "登录已失效，请重新登录"),
 
-    XXL_JOB_ERROR(20003,"XXL-JOb执行任务失败")
-    ;
+    XXL_JOB_ERROR(20003,"XXL-JOb执行任务失败"),
+
+    FACE_FAIL(20004, "人脸识别失败");
 
     private Integer code;
 
