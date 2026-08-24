@@ -42,4 +42,16 @@ public class OrderServiceImpl implements OrderService {
         // 远程调用
         return newOrderFeignClient.findNewOrderQueueData(driverId).getData();
     }
+
+    /**
+     * 司机抢单
+     * @param driverId 司机ID
+     * @param orderId 订单ID
+     * @return 是否抢单成功
+     */
+    @Override
+    public Boolean robNewOrder(Long driverId, Long orderId) {
+        // 远程调用
+        return orderInfoFeignClient.robNewOrder(driverId, orderId).getData();
+    }
 }
