@@ -99,7 +99,87 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
     }
 
     /**
-     * 司机抢单
+     * 司机抢单：基础版本，存在并发安全（类似超卖）
+     * @param driverId 司机ID
+     * @param orderId 订单ID
+     * @return 是否抢单成功
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean robNewOrder1(Long driverId, Long orderId) {
+        // 判断订单是否存在，通过Redis判断（看保存订单时），减少数据库的压力
+        // 抢单成功或取消订单，都会删除该key，redis判断，减少数据库压力
+        if(!redisTemplate.hasKey(RedisConstant.ORDER_ACCEPT_MARK)) {
+            // 抢单失败
+            throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
+        }
+        // 司机抢单
+        // 修改order_info表订单状态、接单司机id、接单时间
+        // update order_info set status = 2, driver_id = #{driverId}, accept_time = now() where id = #{id}
+        OrderInfo orderInfo = new OrderInfo();
+        orderInfo.setId(orderId);
+        orderInfo.setStatus(OrderStatus.ACCEPTED.getStatus());  // 修改订单状态值为2，表示“已接单”
+        orderInfo.setAcceptTime(new Date());
+        orderInfo.setDriverId(driverId);
+
+        int rows = orderInfoMapper.updateById(orderInfo);
+        if(rows != 1) {
+            //抢单失败
+            throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
+        }
+
+        // 记录日志
+        this.log(orderId, orderInfo.getStatus());
+
+        // 删除redis订单标识
+        redisTemplate.delete(RedisConstant.ORDER_ACCEPT_MARK);
+
+        return true;
+    }
+
+    /**
+     * 司机抢单：乐观锁方案解决并发安全问题
+     * @param driverId 司机ID
+     * @param orderId 订单ID
+     * @return 是否抢单成功
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean robNewOrder2(Long driverId, Long orderId) {
+        // 判断订单是否存在，通过Redis判断（看保存订单时），减少数据库的压力
+        // 抢单成功或取消订单，都会删除该key，redis判断，减少数据库压力
+        if(!redisTemplate.hasKey(RedisConstant.ORDER_ACCEPT_MARK)) {
+            // 抢单失败
+            throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
+        }
+        // 司机抢单
+        // 修改order_info表订单状态、接单司机id、接单时间，乐观锁（CAS）解决并发安全，以status作为版本号。 
+        // update order_info set status = 2, driver_id = #{driverId}, accept_time = now() where id = #{id} and status =1
+        LambdaQueryWrapper<OrderInfo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(OrderInfo::getId, orderId);
+        queryWrapper.eq(OrderInfo::getStatus, OrderStatus.WAITING_ACCEPT.getStatus());
+
+        OrderInfo orderInfo = new OrderInfo();
+        orderInfo.setId(orderId);
+        orderInfo.setStatus(OrderStatus.ACCEPTED.getStatus());  // 修改订单状态值为2，表示“已接单”
+        orderInfo.setAcceptTime(new Date());
+        orderInfo.setDriverId(driverId);
+
+        int rows = orderInfoMapper.update(orderInfo, queryWrapper);
+        if(rows != 1) {
+            //抢单失败
+            throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
+        }
+
+        // 记录日志
+        this.log(orderId, orderInfo.getStatus());
+
+        // 删除redis订单标识
+        redisTemplate.delete(RedisConstant.ORDER_ACCEPT_MARK);
+
+        return true;
+    }
+
+    /**
+     * 司机抢单：乐观锁方案解决并发安全问题
      * @param driverId 司机ID
      * @param orderId 订单ID
      * @return 是否抢单成功
@@ -114,7 +194,7 @@ public class OrderInfoServiceImpl extends ServiceImpl<OrderInfoMapper, OrderInfo
             throw new GuiguException(ResultCodeEnum.COB_NEW_ORDER_FAIL);
         }
         // 司机抢单
-        // 修改order_info表订单状态、接单司机id、接单实践
+        // 修改order_info表订单状态、接单司机id、接单时间
         // update order_info set status = 2, driver_id = #{driverId}, accept_time = now() where id = #{id}
         OrderInfo orderInfo = new OrderInfo();
         orderInfo.setId(orderId);
